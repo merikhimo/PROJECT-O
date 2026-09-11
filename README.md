@@ -4,4 +4,4 @@ project O is...
 ### contributors:
 - Samat Zaripov
 - Maria Khan
-- Alexander Svedov
+- Alexander Shvedov
