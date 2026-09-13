@@ -14,10 +14,9 @@
 %token <Boolean> BOOLEAN
 %token <Object>  ANY_VALUE
 
-%token PLUS
-%token MINUS
-%token MULT
-%token DIV
+%token PLUS MULT DIV MINUS
+
+%token BRACKET_L BRACKET_R SQR_BRACKET_L SQR_BRACKET_R COMMA SEMICOLON DOT
 
 // Все правила грамматики возвращают базовый тип Node
 %type <Node> expression
@@ -38,8 +37,19 @@ program:
 // Саша
 
 expression:
+    // у нас не инфиксная нотация, поэтому пока что заглушка
+    // будет что то вида ANY VALUE DOT operation LBRACKET ANY_VALUE RBRACKET 
     expression PLUS expression {
         $$ = new PlusNode($1, $3); 
+    }
+    | expression MINUS expression {
+        $$ = new MinusNode($1, $3);
+    }
+    | expression MULT expression {
+        $$ = new MultiplicationNode($1, $3);
+    }
+    | expression DIV expression {
+        $$ = new DivisionNode($1, $3);
     }
     | INT {
         $$ = new NumberNode($1);
@@ -56,5 +66,6 @@ expression:
     | ANY_VALUE{
         $$ = new AnyValueNode($1);
     }
+    | 
     ;
 %%
