@@ -1,0 +1,23 @@
+class Base is
+    method say() is
+        Print(1)
+    end
+
+    this() is end
+end
+
+class Derived extends Base is
+    method say() is
+        Print(2)
+    end
+
+    this() is end
+end
+
+class Main is
+    this() is
+        var obj : Base()
+        obj := Derived()
+        obj.say()
+    end
+end

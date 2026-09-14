@@ -1,0 +1,5 @@
+class Main is
+    this(args: IntArray) is
+        Print(1)
+    end
+end

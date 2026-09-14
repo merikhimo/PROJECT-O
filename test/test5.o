@@ -1,0 +1,15 @@
+class ControlFlowTest is
+    this() is
+        var counter : 1
+        var limit : 3
+
+        while counter.LessEqual(limit) loop
+            if counter.Equal(2) then
+                Print(999)
+            else
+                Print(counter)
+            end
+            counter := counter.Plus(1)
+        end
+    end
+end

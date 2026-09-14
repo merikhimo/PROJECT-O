@@ -1,0 +1,13 @@
+class ArrayTest is
+    this() is
+        var arr : IntArray(5)
+        arr.set(0, 100)
+        arr.set(1, 200)
+
+        var first : arr.get(0)
+        var size : arr.Length()
+
+        Print(first)
+        Print(size)
+    end
+end

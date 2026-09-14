@@ -1,0 +1,13 @@
+class Runner is
+    method stepTwo(x: Integer) : Integer
+
+    method stepOne(x: Integer) : Integer is
+        return this.stepTwo(x.Plus(1))
+    end
+
+    method stepTwo(x: Integer) : Integer is
+        return x.Mult(2)
+    end
+
+    this() is end
+end

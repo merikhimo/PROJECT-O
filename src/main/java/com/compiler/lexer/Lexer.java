@@ -8,7 +8,6 @@ public class Lexer {
     private final String input;
     private int pos = 0;
     private Object lval;
-
     private int line = 1;
     private int column = 1;
 
@@ -104,9 +103,7 @@ public class Lexer {
                 }
                 advanceCursor(1);
                 return COLON;
-            }
-
-            if (current == '=') {
+            } else  if (current == '=') {
                 if (pos + 1 < input.length() && input.charAt(pos + 1) == '>') {
                     advanceCursor(2);
                     return ARROW;
