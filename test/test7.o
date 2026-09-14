@@ -1,0 +1,19 @@
+class Calculator is
+    method process(x: Integer) : Integer is
+        return x.Plus(1)
+    end
+
+    method process(x: Real) : Real is
+        return x.Plus(1.0)
+    end
+
+    this() is end
+end
+
+class Main is
+    this() is
+        var calc : Calculator()
+        var r1 : calc.process(10)
+        var r2 : calc.process(5.5)
+    end
+end

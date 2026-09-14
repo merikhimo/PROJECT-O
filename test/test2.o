@@ -1,0 +1,9 @@
+class TypeInferenceTest is
+    this() is
+        var myInt : 42
+        var myReal : 3.14
+        var myBool : true
+
+        Print(myInt)
+    end
+end

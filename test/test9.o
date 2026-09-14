@@ -1,0 +1,9 @@
+class MathUtils is
+    method square(x: Integer) : Integer => x.Mult(x)
+
+    method cube(x: Integer) : Integer is
+        return x.Mult(x).Mult(x)
+    end
+
+    this() is end
+end

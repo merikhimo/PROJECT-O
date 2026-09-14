@@ -1,0 +1,9 @@
+class ArithmeticTest is
+    this() is
+        var a : 10
+        var b : 5
+        var result : a.Plus(b).Mult(2)
+
+        Print(result)
+    end
+end
