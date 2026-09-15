@@ -1,7 +1,7 @@
 %language "Java"
 //точка входа
-%package "com.compiler"
-%define parser_class_name "Parser"
+%define api.package "com.compiler"
+%define api.parser.class {Parser}
 
 %code imports {
     //тут все ноды надо будет прописать
@@ -37,7 +37,7 @@
 %token <Integer> INT 1
 %token <Double>  REAL 2
 %token <Boolean> BOOLEAN 3
-%token <String>  INDENTIFIER 4
+%token <String>  IDENTIFIER 4
 %token CLASS 5
 %token EXTENDS 6
 %token IS 7
@@ -56,7 +56,10 @@
 %token BRACKET_R 20
 %token COMMA 21
 %token SEMICOLON 22
+
 %token DOT 23
+%left DOT
+
 %token COLON 24
 %token ASSIGN 25
 %token ARROW 26
@@ -341,10 +344,6 @@ expression:
       {
           $$ = $1;
       }
-    | constructor_invocation
-      {
-          $$ = $1;
-      }
     | function_call
       {
           $$ = $1;
@@ -423,6 +422,11 @@ primary:
     | BOOLEAN
       {
           $$ = new BooleanNumberNode($1);
+      }
+    | IDENTIFIER
+      {
+          // Обычная переменная или имя типа/вызова
+          $$ = new VariableNode($1); 
       }
     | THIS
       {
