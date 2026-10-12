@@ -4,68 +4,44 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Lexer {
+import main.java.com.compiler.Parser;
+
+public class Lexer implements Parser.Lexer {
     private final String input;
     private int pos = 0;
     private Object lval;
     private int line = 1;
     private int column = 1;
 
-    public static final int EOF = 0;
-    public static final int INT_LITERAL    = 1;
-    public static final int REAL_LITERAL   = 2;
-    public static final int BOOL_LITERAL   = 3;
-    public static final int IDENTIFIER     = 4;
-    public static final int CLASS          = 5;
-    public static final int EXTENDS        = 6;
-    public static final int IS             = 7;
-    public static final int END            = 8;
-    public static final int VAR            = 9;
-    public static final int METHOD         = 10;
-    public static final int THIS           = 11;
-    public static final int WHILE          = 12;
-    public static final int LOOP           = 13;
-    public static final int IF             = 14;
-    public static final int THEN           = 15;
-    public static final int ELSE           = 16;
-    public static final int RETURN         = 17;
-    public static final int NULL           = 18;
-    public static final int BRACKET_L      = 19;
-    public static final int BRACKET_R      = 20;
-    public static final int COMMA          = 21;
-    public static final int SEMICOLON      = 22;  //;
-    public static final int DOT            = 23;
-    public static final int COLON          = 24;  //:
-    public static final int ASSIGN         = 25;  // :=
-    public static final int ARROW          = 26;  // =>
 
     private static final Map<String, Integer> KEYWORDS = new HashMap<>();
     static {
-        KEYWORDS.put("class", CLASS);
-        KEYWORDS.put("extends", EXTENDS);
-        KEYWORDS.put("is", IS);
-        KEYWORDS.put("end", END);
-        KEYWORDS.put("var", VAR);
-        KEYWORDS.put("method", METHOD);
-        KEYWORDS.put("this", THIS);
-        KEYWORDS.put("while", WHILE);
-        KEYWORDS.put("loop", LOOP);
-        KEYWORDS.put("if", IF);
-        KEYWORDS.put("then", THEN);
-        KEYWORDS.put("else", ELSE);
-        KEYWORDS.put("return", RETURN);
-        KEYWORDS.put("null", NULL);
+        KEYWORDS.put("class", Parser.Lexer.CLASS);
+        KEYWORDS.put("extends", Parser.Lexer.EXTENDS);
+        KEYWORDS.put("is", Parser.Lexer.IS);
+        KEYWORDS.put("end", Parser.Lexer.END);
+        KEYWORDS.put("var", Parser.Lexer.VAR);
+        KEYWORDS.put("method", Parser.Lexer.METHOD);
+        KEYWORDS.put("this", Parser.Lexer.THIS);
+        KEYWORDS.put("while", Parser.Lexer.WHILE);
+        KEYWORDS.put("loop", Parser.Lexer.LOOP);
+        KEYWORDS.put("if", Parser.Lexer.IF);
+        KEYWORDS.put("then", Parser.Lexer.THEN);
+        KEYWORDS.put("else", Parser.Lexer.ELSE);
+        KEYWORDS.put("return", Parser.Lexer.RETURN);
+        KEYWORDS.put("null", Parser.Lexer.NULL);
     }
 
     public Lexer(String input) {
         this.input = input;
     }
 
+    @Override
     public int yylex() throws IOException {
         while (true) {
             skipWhitespace();
             if (pos >= input.length()) {
-                return EOF;
+                return 0;
             }
             char current = input.charAt(pos);
 
@@ -99,24 +75,24 @@ public class Lexer {
             if (current == ':') {
                 if (pos + 1 < input.length() && input.charAt(pos + 1) == '=') {
                     advanceCursor(2);
-                    return ASSIGN;
+                    return Parser.Lexer.ASSIGN;
                 }
                 advanceCursor(1);
-                return COLON;
-            } else  if (current == '=') {
+                return Parser.Lexer.COLON;
+            } else if (current == '=') {
                 if (pos + 1 < input.length() && input.charAt(pos + 1) == '>') {
                     advanceCursor(2);
-                    return ARROW;
+                    return Parser.Lexer.ARROW;
                 }
                 throw new IOException("Lexical error: Single '=' character is not supported at line " + line + ", column " + column + ". Did you mean '=>' or ':='?");
             }
 
             switch (current) {
-                case '(': advanceCursor(1); return BRACKET_L;
-                case ')': advanceCursor(1); return BRACKET_R;
-                case ',': advanceCursor(1); return COMMA;
-                case ';': advanceCursor(1); return SEMICOLON;
-                case '.': advanceCursor(1); return DOT;
+                case '(': advanceCursor(1); return Parser.Lexer.BRACKET_L;
+                case ')': advanceCursor(1); return Parser.Lexer.BRACKET_R;
+                case ',': advanceCursor(1); return Parser.Lexer.COMMA;
+                case ';': advanceCursor(1); return Parser.Lexer.SEMICOLON;
+                case '.': advanceCursor(1); return Parser.Lexer.DOT;
             }
 
             if (Character.isDigit(current)) {
@@ -151,11 +127,11 @@ public class Lexer {
 
         if (word.equals("true") || word.equals("false")) {
             this.lval = Boolean.parseBoolean(word);
-            return BOOL_LITERAL;
+            return Parser.Lexer.BOOLEAN;
         }
 
         this.lval = word;
-        return IDENTIFIER;
+        return Parser.Lexer.IDENTIFIER;
     }
 
     private int readNumber() throws IOException {
@@ -187,13 +163,12 @@ public class Lexer {
         String numStr = sb.toString();
         if (isReal) {
             this.lval = Double.parseDouble(numStr);
-            return REAL_LITERAL;
+            return Parser.Lexer.REAL;
         } else {
             this.lval = Integer.parseInt(numStr);
-            return INT_LITERAL;
+            return Parser.Lexer.INT;
         }
     }
-
 
     private void advanceCursor(int count) {
         for (int i = 0; i < count; i++) {
@@ -214,8 +189,15 @@ public class Lexer {
         }
     }
 
+    @Override
     public Object getLVal() {
         return this.lval;
+    }
+
+
+    @Override
+    public void yyerror(String msg) {
+        System.err.println("Syntax Error at line " + line + ", column " + column + ": " + msg);
     }
 
     public int getLine() {
