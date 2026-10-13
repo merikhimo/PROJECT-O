@@ -1,31 +1,12 @@
 %language "Java"
-//точка входа
 %define api.package "com.compiler"
 %define api.parser.class {Parser}
 
 %code imports {
-    //тут все ноды надо будет прописать
     import com.compiler.ast.*;
     import java.util.List;
     import java.util.ArrayList;
 }
-
-//I think i should write comments in english
-
-//nodes to implement:
-// Node
-// ProgramNode
-// ClassDeclNode
-// VariableDeclNode
-// MethodDeclNode + Body + Header 
-// ParameterNode
-// ConstructNode
-// AssignmentNode
-// WhileNode
-// IfNode
-// ReturnNode
-// MemberAccessNode
-// ConstructorInvocNode
 
 %code {
     private Node rootNode;
@@ -35,9 +16,9 @@
 }
 
 %token <Integer> INT 1
-%token <Double>  REAL 2
+%token <Double> REAL 2
 %token <Boolean> BOOLEAN 3
-%token <String>  IDENTIFIER 4
+%token <String> IDENTIFIER 4
 %token CLASS 5
 %token EXTENDS 6
 %token IS 7
@@ -56,10 +37,7 @@
 %token BRACKET_R 20
 %token COMMA 21
 %token SEMICOLON 22
-
 %token DOT 23
-%left DOT
-
 %token COLON 24
 %token ASSIGN 25
 %token ARROW 26
@@ -79,6 +57,7 @@
 %type <Node> if_statement
 %type <Node> return_statement
 %type <Node> expression
+%type <Node> postfix_expression
 %type <Node> primary
 %type <Node> constructor_invocation
 %type <Node> function_call
@@ -92,346 +71,292 @@
 %%
 
 program:
-      class_declaration_list
-      {
-          rootNode = new ProgramNode($1);
-          $$ = rootNode;
-      }
+    class_declaration_list
+    {
+        rootNode = new ProgramNode($1);
+        $$ = rootNode;
+    }
     ;
 
 class_declaration_list:
-      {
-          $$ = new ArrayList<Node>();
-      }
-    | class_declaration_list class_declaration
-      {
-          $1.add($2);
-          $$ = $1;
-      }
+    %empty
+    {
+        $$ = new ArrayList<Node>();
+    }
+  | class_declaration_list class_declaration
+    {
+        $1.add($2);
+        $$ = $1;
+    }
     ;
 
 class_declaration:
-      CLASS IDENTIFIER IS member_list END
-      {
-          $$ = new ClassDeclNode(
-              $2,
-              null,
-              $4
-          );
-      }
-    | CLASS IDENTIFIER EXTENDS IDENTIFIER IS member_list END
-      {
-          $$ = new ClassDeclNode(
-              $2,
-              $4,
-              $6
-          );
-      }
+    CLASS IDENTIFIER IS member_list END
+    {
+        $$ = new ClassDeclNode($2, null, $4);
+    }
+  | CLASS IDENTIFIER EXTENDS IDENTIFIER IS member_list END
+    {
+        $$ = new ClassDeclNode($2, $4, $6);
+    }
     ;
 
 member_list:
-      {
-          $$ = new ArrayList<Node>();
-      }
-    | member_list member
-      {
-          $1.add($2);
-          $$ = $1;
-      }
+    %empty
+    {
+        $$ = new ArrayList<Node>();
+    }
+  | member_list member
+    {
+        $1.add($2);
+        $$ = $1;
+    }
     ;
 
 member:
-      variable_declaration
-      {
-          $$ = $1;
-      }
-    | method_declaration
-      {
-          $$ = $1;
-      }
-    | constructor_declaration
-      {
-          $$ = $1;
-      }
+    variable_declaration { $$ = $1; }
+  | method_declaration   { $$ = $1; }
+  | constructor_declaration { $$ = $1; }
     ;
 
 variable_declaration:
-      VAR IDENTIFIER COLON expression
-      {
-          $$ = new VariableDeclNode($2, $4);
-      }
+    VAR IDENTIFIER COLON expression
+    {
+        $$ = new VariableDeclNode($2, $4);
+    }
     ;
 
-
 method_declaration:
-      method_header
-      {
-          $$ = new MethodDeclNode($1, null);
-      }
-    | method_header method_body
-      {
-          $$ = new MethodDeclNode($1, $2);
-      }
+    method_header
+    {
+        $$ = new MethodDeclNode($1, null);
+    }
+  | method_header method_body
+    {
+        $$ = new MethodDeclNode($1, $2);
+    }
     ;
 
 method_header:
-      METHOD IDENTIFIER
-      {
-          $$ = new MethodHeaderNode(
-              $2,
-              new ArrayList<Node>(),
-              null
-          );
-      }
-    | METHOD IDENTIFIER BRACKET_L parameter_list BRACKET_R
-      {
-          $$ = new MethodHeaderNode(
-              $2,
-              $4,
-              null
-          );
-      }
-    | METHOD IDENTIFIER COLON IDENTIFIER
-      {
-          $$ = new MethodHeaderNode(
-              $2,
-              new ArrayList<Node>(),
-              $4
-          );
-      }
-    | METHOD IDENTIFIER BRACKET_L parameter_list BRACKET_R
-      COLON IDENTIFIER
-      {
-          $$ = new MethodHeaderNode(
-              $2,
-              $4,
-              $7
-          );
-      }
+    METHOD IDENTIFIER
+    {
+        $$ = new MethodHeaderNode($2, new ArrayList<Node>(), null);
+    }
+  | METHOD IDENTIFIER BRACKET_L BRACKET_R
+    {
+        $$ = new MethodHeaderNode($2, new ArrayList<Node>(), null);
+    }
+  | METHOD IDENTIFIER BRACKET_L parameter_list BRACKET_R
+    {
+        $$ = new MethodHeaderNode($2, $4, null);
+    }
+  | METHOD IDENTIFIER COLON IDENTIFIER
+    {
+        $$ = new MethodHeaderNode($2, new ArrayList<Node>(), $4);
+    }
+  | METHOD IDENTIFIER BRACKET_L BRACKET_R COLON IDENTIFIER
+    {
+        $$ = new MethodHeaderNode($2, new ArrayList<Node>(), $6);
+    }
+  | METHOD IDENTIFIER BRACKET_L parameter_list BRACKET_R COLON IDENTIFIER
+    {
+        $$ = new MethodHeaderNode($2, $4, $7);
+    }
     ;
 
 method_body:
-      IS statement_list END
-      {
-          $$ = new MethodBodyNode($2);
-      }
-    | ARROW expression
-      {
-          $$ = new ExpressionBodyNode($2);
-      }
+    IS statement_list END
+    {
+        $$ = new MethodBodyNode($2);
+    }
+  | ARROW expression
+    {
+        $$ = new ExpressionBodyNode($2);
+    }
     ;
 
 parameter_list:
-      parameter
-      {
-          List<Node> list = new ArrayList<Node>();
-          list.add($1);
-          $$ = list;
-      }
-    | parameter_list COMMA parameter
-      {
-          $1.add($3);
-          $$ = $1;
-      }
+    parameter
+    {
+        List<Node> list = new ArrayList<Node>();
+        list.add($1);
+        $$ = list;
+    }
+  | parameter_list COMMA parameter
+    {
+        $1.add($3);
+        $$ = $1;
+    }
     ;
 
 parameter:
-      IDENTIFIER COLON IDENTIFIER
-      {
-          $$ = new ParameterNode($1, $3);
-      }
+    IDENTIFIER COLON IDENTIFIER
+    {
+        $$ = new ParameterNode($1, $3);
+    }
     ;
 
 constructor_declaration:
-      THIS IS statement_list END
-      {
-          $$ = new ConstructNode(
-              new ArrayList<Node>(),
-              $3
-          );
-      }
-    | THIS BRACKET_L parameter_list BRACKET_R IS statement_list END
-      {
-          $$ = new ConstructNode(
-              $3,
-              $6
-          );
-      }
+    THIS IS statement_list END
+    {
+        $$ = new ConstructNode(new ArrayList<Node>(), $3);
+    }
+  | THIS BRACKET_L BRACKET_R IS statement_list END
+    {
+        $$ = new ConstructNode(new ArrayList<Node>(), $5);
+    }
+  | THIS BRACKET_L parameter_list BRACKET_R IS statement_list END
+    {
+        $$ = new ConstructNode($3, $6);
+    }
     ;
 
 statement_list:
-      {
-          $$ = new ArrayList<Node>();
-      }
-    | statement_list statement
-      {
-          $1.add($2);
-          $$ = $1;
-      }
-    | statement_list variable_declaration
-      {
-          $1.add($2);
-          $$ = $1;
-      }
+    %empty
+    {
+        $$ = new ArrayList<Node>();
+    }
+  | statement_list statement
+    {
+        $1.add($2);
+        $$ = $1;
+    }
+  | statement_list variable_declaration
+    {
+        $1.add($2);
+        $$ = $1;
+    }
     ;
 
-
 statement:
-      assignment
-      {
-          $$ = $1;
-      }
-    | while_loop
-      {
-          $$ = $1;
-      }
-    | if_statement
-      {
-          $$ = $1;
-      }
-    | return_statement
-      {
-          $$ = $1;
-      }
+    assignment       { $$ = $1; }
+  | while_loop       { $$ = $1; }
+  | if_statement     { $$ = $1; }
+  | return_statement { $$ = $1; }
+  | expression       { $$ = $1; }
     ;
 
 assignment:
-      IDENTIFIER ASSIGN expression
-      {
-          $$ = new AssignmentNode($1, $3);
-      }
+    IDENTIFIER ASSIGN expression
+    {
+        $$ = new AssignmentNode($1, $3);
+    }
     ;
 
 while_loop:
-      WHILE expression LOOP statement_list END
-      {
-          $$ = new WhileNode($2, $4);
-      }
+    WHILE expression LOOP statement_list END
+    {
+        $$ = new WhileNode($2, $4);
+    }
     ;
 
 if_statement:
-      IF expression THEN statement_list END
-      {
-          $$ = new IfNode(
-              $2,
-              $4,
-              new ArrayList<Node>()
-          );
-      }
-    | IF expression THEN statement_list ELSE statement_list END
-      {
-          $$ = new IfNode(
-              $2,
-              $4,
-              $6
-          );
-      }
+    IF expression THEN statement_list END
+    {
+        $$ = new IfNode($2, $4, new ArrayList<Node>());
+    }
+  | IF expression THEN statement_list ELSE statement_list END
+    {
+        $$ = new IfNode($2, $4, $6);
+    }
     ;
 
 return_statement:
-      RETURN
-      {
-          $$ = new ReturnNode(null);
-      }
-    | RETURN expression
-      {
-          $$ = new ReturnNode($2);
-      }
+    RETURN
+    {
+        $$ = new ReturnNode(null);
+    }
+  | RETURN expression
+    {
+        $$ = new ReturnNode($2);
+    }
     ;
 
 expression:
-      primary
-      {
-          $$ = $1;
-      }
-    | function_call
-      {
-          $$ = $1;
-      }
-    | expression DOT expression
-      {
-          $$ = new MemberAccessNode($1, $3);
-      }
+    postfix_expression
+    {
+        $$ = $1;
+    }
     ;
 
-constructor_invocation:
-      IDENTIFIER
-      {
-          $$ = new ConstructorInvocNode(
-              $1,
-              new ArrayList<Node>()
-          );
-      }
-    | IDENTIFIER BRACKET_L BRACKET_R
-      {
-          $$ = new ConstructorInvocNode(
-              $1,
-              new ArrayList<Node>()
-          );
-      }
-    | IDENTIFIER BRACKET_L argument_list BRACKET_R
-      {
-          $$ = new ConstructorInvocNode(
-              $1,
-              $3
-          );
-      }
-    ;
-
-
-function_call:
-      expression BRACKET_L BRACKET_R
-      {
-          $$ = new FunctionCallNode(
-              $1,
-              new ArrayList<Node>()
-          );
-      }
-    | expression BRACKET_L argument_list BRACKET_R
-      {
-          $$ = new FunctionCallNode(
-              $1,
-              $3
-          );
-      }
-    ;
-
-argument_list:
-      expression
-      {
-          List<Node> list = new ArrayList<Node>();
-          list.add($1);
-          $$ = list;
-      }
-    | argument_list COMMA expression
-      {
-          $1.add($3);
-          $$ = $1;
-      }
+postfix_expression:
+    primary
+    {
+        $$ = $1;
+    }
+  | postfix_expression DOT IDENTIFIER
+    {
+        $$ = new MemberAccessNode($1, new VariableNode($3));
+    }
+  | postfix_expression DOT IDENTIFIER BRACKET_L BRACKET_R
+    {
+        Node member = new MemberAccessNode($1, new VariableNode($3));
+        $$ = new FunctionCallNode(member, new ArrayList<Node>());
+    }
+  | postfix_expression DOT IDENTIFIER BRACKET_L argument_list BRACKET_R
+    {
+        Node member = new MemberAccessNode($1, new VariableNode($3));
+        $$ = new FunctionCallNode(member, $5);
+    }
     ;
 
 primary:
-      INT
-      {
-          $$ = new NumberNode($1);
-      }
-    | REAL
-      {
-          $$ = new RealNumberNode($1);
-      }
-    | BOOLEAN
-      {
-          $$ = new BooleanNumberNode($1);
-      }
-    | IDENTIFIER
-      {
-          // Обычная переменная или имя типа/вызова
-          $$ = new VariableNode($1); 
-      }
-    | THIS
-      {
-          $$ = new ThisNode();
-      }
+    INT
+    {
+        $$ = new NumberNode($1);
+    }
+  | REAL
+    {
+        $$ = new RealNumberNode($1);
+    }
+  | BOOLEAN
+    {
+        $$ = new BooleanNumberNode($1);
+    }
+  | IDENTIFIER
+    {
+        $$ = new VariableNode($1);
+    }
+  | THIS
+    {
+        $$ = new ThisNode();
+    }
+  | function_call
+    {
+        $$ = $1;
+    }
+  | BRACKET_L expression BRACKET_R
+    {
+        $$ = $2;
+    }
+    ;
+
+function_call:
+    IDENTIFIER BRACKET_L BRACKET_R
+    {
+        $$ = new FunctionCallNode(
+            new VariableNode($1),
+            new ArrayList<Node>()
+        );
+    }
+  | IDENTIFIER BRACKET_L argument_list BRACKET_R
+    {
+        $$ = new FunctionCallNode(new VariableNode($1), $3);
+    }
+    ;
+
+argument_list:
+    expression
+    {
+        List<Node> list = new ArrayList<Node>();
+        list.add($1);
+        $$ = list;
+    }
+  | argument_list COMMA expression
+    {
+        $1.add($3);
+        $$ = $1;
+    }
     ;
 
 %%
