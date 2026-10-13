@@ -8,6 +8,9 @@
     import java.util.ArrayList;
 }
 
+//I think i should write comments in english
+//AI USED FOR TRIMMING ONLY
+
 %code {
     private Node rootNode;
     public Node getRootNode() {
