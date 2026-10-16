@@ -1,6 +1,6 @@
 package main.java.com.compiler.ast;
 
-class ParameterNode extends Node {
+public class ParameterNode extends Node {
     public String paramName;
     public String paramType;
 
@@ -8,5 +8,10 @@ class ParameterNode extends Node {
         super("Parameter");
         this.paramName = paramName;
         this.paramType = paramType;
+    }
+
+    @Override
+    public void print(String indent) {
+        System.out.println(indent + "Parameter (name: " + paramName + ", type: " + paramType + ")");
     }
 }

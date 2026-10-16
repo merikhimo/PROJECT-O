@@ -18,12 +18,8 @@ public class Main {
             Lexer lexer = new Lexer(sourceCode);
             Parser parser = new Parser(lexer);
 
-            System.out.println("--- Starting Syntax Analysis ---");
-
-            // 3. Запускаем парсинг
             if (parser.parse()) {
                 System.out.println("\n--- Abstract Syntax Tree (AST) ---");
-                // Забираем корень дерева, который сохранил Саня, и печатаем его
                 Node root = parser.getRootNode();
                 if (root != null) {
                     root.print("");

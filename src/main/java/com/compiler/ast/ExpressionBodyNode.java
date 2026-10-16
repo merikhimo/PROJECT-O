@@ -1,6 +1,6 @@
 package main.java.com.compiler.ast;
 
-class ExpressionBodyNode extends Node {
+public class ExpressionBodyNode extends Node {
     public ExpressionBodyNode(Node expression) {
         super("ExpressionBody");
         addChild(expression);
