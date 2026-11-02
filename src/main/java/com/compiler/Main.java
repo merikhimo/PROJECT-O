@@ -2,6 +2,11 @@ package main.java.com.compiler;
 
 import main.java.com.compiler.ast.Node;
 import main.java.com.compiler.lexer.Lexer;
+import main.java.com.compiler.semantic.DeclarationCollector;
+import main.java.com.compiler.semantic.ErrorReporter;
+import main.java.com.compiler.semantic.SymbolTable;
+import main.java.com.compiler.semantic.TypeChecker;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -23,6 +28,20 @@ public class Main {
                 Node root = parser.getRootNode();
                 if (root != null) {
                     root.print("");
+
+                    System.out.println("\n--- Syntax Analysis ---");
+                    ErrorReporter errors = new ErrorReporter();
+                    SymbolTable table = new SymbolTable();
+                    new DeclarationCollector(table, errors).collect(root);
+                    if (!errors.hasErrors()) {
+                        new TypeChecker(table, errors).check(root);
+                    }
+                    if (errors.hasErrors()) {
+                        errors.printAll();
+                        return;
+                    }
+                    table.dump();
+                    System.out.println("Semantic analysis: OK");
                 } else {
                     System.out.println("Root node is null.");
                 }

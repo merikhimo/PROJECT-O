@@ -5,4 +5,9 @@ public class ReturnNode extends Node {
         super("Return");
         addChild(expression);
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

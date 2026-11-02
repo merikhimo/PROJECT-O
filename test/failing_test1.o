@@ -1,0 +1,5 @@
+class VariableNotDeclared is
+    this() is
+        Print(x)
+    end
+end

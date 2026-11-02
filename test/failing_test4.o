@@ -1,0 +1,7 @@
+class WrongConditionType is
+    this() is
+        if 5 then
+            Print(1)
+        end
+    end
+end

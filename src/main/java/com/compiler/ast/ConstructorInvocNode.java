@@ -25,4 +25,9 @@ public class ConstructorInvocNode extends Node {
             if (child != null) child.print(indent + "  ");
         }
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

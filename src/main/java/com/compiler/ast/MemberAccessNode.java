@@ -12,4 +12,9 @@ public class MemberAccessNode extends Node {
         addChild(left);
         addChild(right);
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

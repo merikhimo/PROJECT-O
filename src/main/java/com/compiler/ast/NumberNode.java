@@ -12,4 +12,9 @@ public class NumberNode extends Node {
     public void print(String indent) {
         System.out.println(indent + "IntLiteral (" + value + ")");
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

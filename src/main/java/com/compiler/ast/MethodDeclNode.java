@@ -12,4 +12,9 @@ public class MethodDeclNode extends Node {
         addChild(header);
         addChild(body);
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

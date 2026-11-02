@@ -25,4 +25,9 @@ public class IfNode extends Node {
             }
         }
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

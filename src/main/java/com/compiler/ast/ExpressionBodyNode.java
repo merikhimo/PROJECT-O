@@ -5,4 +5,9 @@ public class ExpressionBodyNode extends Node {
         super("ExpressionBody");
         addChild(expression);
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

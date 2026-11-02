@@ -19,4 +19,9 @@ public class VariableDeclNode extends Node {
             initializer.print(indent + "  ");
         }
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

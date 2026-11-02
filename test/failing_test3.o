@@ -1,0 +1,6 @@
+class WrongArgumentType is
+    this() is
+        var a : 5
+        a.Plus(true)
+    end
+end

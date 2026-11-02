@@ -14,4 +14,9 @@ public class ParameterNode extends Node {
     public void print(String indent) {
         System.out.println(indent + "Parameter (name: " + paramName + ", type: " + paramType + ")");
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }

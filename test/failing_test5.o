@@ -1,0 +1,5 @@
+class FakeClassConstructor is
+    this() is
+        var b : FakeClass()
+    end
+end

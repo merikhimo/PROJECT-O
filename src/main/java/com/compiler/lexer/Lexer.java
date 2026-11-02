@@ -12,6 +12,8 @@ public class Lexer implements Parser.Lexer {
     private Object lval;
     private int line = 1;
     private int column = 1;
+    public static int tokLine = 1;
+    public static int tokColumn = 1;
 
 
     private static final Map<String, Integer> KEYWORDS = new HashMap<>();
@@ -44,6 +46,8 @@ public class Lexer implements Parser.Lexer {
                 return 0;
             }
             char current = input.charAt(pos);
+            tokLine = line;
+            tokColumn = column;
 
             // Comments
             if (current == '/' && pos + 1 < input.length()) {

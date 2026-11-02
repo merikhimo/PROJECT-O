@@ -19,4 +19,9 @@ public class AssignmentNode extends Node {
             expression.print(indent + "  ");
         }
     }
+
+    @Override
+    public <R> R accept(Visitor<R> v) {
+        return v.visit(this);
+    }
 }
