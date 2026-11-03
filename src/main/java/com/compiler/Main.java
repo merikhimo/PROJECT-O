@@ -2,10 +2,7 @@ package main.java.com.compiler;
 
 import main.java.com.compiler.ast.Node;
 import main.java.com.compiler.lexer.Lexer;
-import main.java.com.compiler.semantic.DeclarationCollector;
-import main.java.com.compiler.semantic.ErrorReporter;
-import main.java.com.compiler.semantic.SymbolTable;
-import main.java.com.compiler.semantic.TypeChecker;
+import main.java.com.compiler.semantic.*;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,7 +21,7 @@ public class Main {
             Parser parser = new Parser(lexer);
 
             if (parser.parse()) {
-                System.out.println("\n--- Abstract Syntax Tree (AST) ---");
+                System.out.println("\n--- Abstract Syntax Tree (Before optimisation) ---");
                 Node root = parser.getRootNode();
                 if (root != null) {
                     root.print("");
@@ -40,8 +37,16 @@ public class Main {
                         errors.printAll();
                         return;
                     }
-                    table.dump();
                     System.out.println("Semantic analysis: OK");
+
+
+                    Optimizer opt = new Optimizer();
+                    do {
+                        root = opt.run(root);
+                    } while (opt.changed);
+
+                    System.out.println("\n--- AST after optimization ---");
+                    root.print("");
                 } else {
                     System.out.println("Root node is null.");
                 }

@@ -1,0 +1,7 @@
+class Opt is
+    this() is
+        var a : 3.Plus(5).Mult(2)
+        if 3.Less(5) then Print(a) else Print(0) end
+        while false loop Print(1) end
+    end
+end
