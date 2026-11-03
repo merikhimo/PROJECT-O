@@ -1,4 +1,4 @@
-class ЦкщтпЕнзуКуегкт is
+class WrongTypeReturn is
     this() is end
 
     method f () : Integer is
