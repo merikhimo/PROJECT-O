@@ -13,10 +13,11 @@ public class Optimizer implements Visitor<Node> {
     }
 
 
-    private List<Node> visitList(List<Node> list) {
+    public List<Node> visitList(List<Node> list) {
         List<Node> out = new ArrayList<>();
         if (list == null) return out;
-        for (Node s : list) {
+        for (int idx = 0; idx < list.size(); idx++) {
+            Node s = list.get(idx);
             if (s == null) continue;
             Node r = s.accept(this);
             if (r == null) { changed = true; continue; }
@@ -31,11 +32,15 @@ public class Optimizer implements Visitor<Node> {
                 }
             }
             out.add(r);
+            if (r instanceof ReturnNode) {
+                if (idx < list.size() - 1) changed = true;
+                break;
+            }
         }
         return out;
     }
 
-    private List<Node> visitExprs(List<Node> list) {
+    public List<Node> visitExprs(List<Node> list) {
         List<Node> out = new ArrayList<>();
         if (list != null) {
             for (Node e : list) if (e != null) out.add(e.accept(this));
@@ -43,30 +48,30 @@ public class Optimizer implements Visitor<Node> {
         return out;
     }
 
-    private boolean hasDecl(List<Node> block) {
+    public boolean hasDecl(List<Node> block) {
         for (Node s : block) if (s instanceof VariableDeclNode) return true;
         return false;
     }
 
-    private <T extends Node> T keep(T fresh, Node old) {
+    public <T extends Node> T keep(T fresh, Node old) {
         fresh.line = old.line;
         fresh.column = old.column;
         fresh.resolvedType = old.resolvedType;
         return fresh;
     }
 
-    private <T extends Node> T at(T fresh, Node old) {
+    public <T extends Node> T at(T fresh, Node old) {
         fresh.line = old.line;
         fresh.column = old.column;
         return fresh;
     }
 
-    private Node intLit(int v)      { NumberNode n = new NumberNode(v); n.resolvedType = "Integer"; return n; }
-    private Node realLit(double v)  { RealNumberNode n = new RealNumberNode(v); n.resolvedType = "Real"; return n; }
-    private Node boolLit(boolean v) { BooleanNumberNode n = new BooleanNumberNode(v); n.resolvedType = "Boolean"; return n; }
+    public Node intLit(int v)      { NumberNode n = new NumberNode(v); n.resolvedType = "Integer"; return n; }
+    public Node realLit(double v)  { RealNumberNode n = new RealNumberNode(v); n.resolvedType = "Real"; return n; }
+    public Node boolLit(boolean v) { BooleanNumberNode n = new BooleanNumberNode(v); n.resolvedType = "Boolean"; return n; }
 
-    private boolean isNum(Node n) { return n instanceof NumberNode || n instanceof RealNumberNode; }
-    private double num(Node n) {
+    public boolean isNum(Node n) { return n instanceof NumberNode || n instanceof RealNumberNode; }
+    public double num(Node n) {
         return (n instanceof NumberNode) ? ((NumberNode) n).value : ((RealNumberNode) n).value;
     }
 
@@ -154,7 +159,7 @@ public class Optimizer implements Visitor<Node> {
         return fold(call);
     }
 
-    private Node fold(FunctionCallNode call) {
+    public Node fold(FunctionCallNode call) {
         if (!(call.expression instanceof MemberAccessNode)) return call;
         MemberAccessNode ma = (MemberAccessNode) call.expression;
         if (!(ma.right instanceof VariableNode)) return call;
@@ -170,7 +175,7 @@ public class Optimizer implements Visitor<Node> {
         return at(folded, call);
     }
 
-    private Node foldBinary(String op, Node l, Node r) {
+    public Node foldBinary(String op, Node l, Node r) {
         if (l instanceof NumberNode && r instanceof NumberNode) {
             int a = ((NumberNode) l).value, b = ((NumberNode) r).value;
             switch (op) {
@@ -214,7 +219,7 @@ public class Optimizer implements Visitor<Node> {
         return foldIdentity(op, l, r);
     }
 
-    private Node foldUnary(String op, Node l) {
+    public Node foldUnary(String op, Node l) {
         if (op.equals("Not") && l instanceof BooleanNumberNode) {
             return boolLit(!((BooleanNumberNode) l).value);
         }
@@ -225,7 +230,7 @@ public class Optimizer implements Visitor<Node> {
         return null;
     }
 
-    private Node foldIdentity(String op, Node l, Node r) {
+    public Node foldIdentity(String op, Node l, Node r) {
         if (r instanceof NumberNode && "Integer".equals(l.resolvedType)) {
             int v = ((NumberNode) r).value;
             if ((v == 0 && (op.equals("Plus") || op.equals("Minus")))

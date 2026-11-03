@@ -1,0 +1,15 @@
+class DeadCode is
+    method f(a: Integer) : Integer is
+        if a.Greater(0) then
+            return 1
+            Print(2)
+            Print(3)
+        end
+        return 0
+    end
+
+    this() is
+        var x : this.f(5)
+        Print(x)
+    end
+end
