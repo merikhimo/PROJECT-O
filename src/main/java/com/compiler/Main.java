@@ -1,6 +1,7 @@
 package main.java.com.compiler;
 
 import main.java.com.compiler.ast.Node;
+import main.java.com.compiler.codegen.CodeGenerator;
 import main.java.com.compiler.lexer.Lexer;
 import main.java.com.compiler.semantic.*;
 
@@ -47,6 +48,11 @@ public class Main {
 
                     System.out.println("\n--- AST after optimization ---");
                     root.print("");
+
+                    CodeGenerator gen = new CodeGenerator(table);
+                    java.nio.file.Path outDir = java.nio.file.Paths.get(args.length > 1 ? args[1] : "out");
+                    gen.generate(root, outDir);
+                    System.out.println("Jasmin files written to " + outDir);
                 } else {
                     System.out.println("Root node is null.");
                 }
