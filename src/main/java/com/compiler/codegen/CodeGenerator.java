@@ -27,10 +27,6 @@ public class CodeGenerator {
         this.flow = new ControlFlowGen(this);
     }
 
-    public static String nameOf(VariableNode v) {
-        return v.varName;
-    }
-
 
     public Map<String, String> generate(Node program) {
         Map<String, String> files = new LinkedHashMap<>();
@@ -68,7 +64,7 @@ public class CodeGenerator {
         }
         out.blank();
 
-        List<Node> members = (c.members == null) ? new ArrayList<Node>() : c.members;
+        List<Node> members = (c.members == null) ? new ArrayList<>() : c.members;
         boolean hasCtor = false;
         for (Node m : members) {
             if (m instanceof ConstructNode) {
@@ -361,8 +357,8 @@ public class CodeGenerator {
         }
     }
 
-    public void genVariable(VariableNode n) {
-        String name = nameOf(n);
+    private void genVariable(VariableNode n) {
+        String name = n.varName;
         Locals.Var v = locals.lookup(name);
         if (v != null) {
             out.emit(Descriptors.prefix(v.type) + "load " + v.slot);
@@ -378,16 +374,16 @@ public class CodeGenerator {
 
     public boolean isClassRef(Node n) {
         if (!(n instanceof VariableNode)) return false;
-        String name = nameOf((VariableNode) n);
+        String name = ((VariableNode) n).varName;
         return locals.lookup(name) == null
                 && table.findField(currentClass.name, name) == null
                 && table.classes.containsKey(name);
     }
 
-    public void genMemberAccess(MemberAccessNode n) {
-        String member = nameOf((VariableNode) n.right);
+    private void genMemberAccess(MemberAccessNode n) {
+        String member = ((VariableNode) n.right).varName;
         if (isClassRef(n.left)) {
-            builtin.genStaticField(nameOf((VariableNode) n.left), member);
+            builtin.genStaticField(((VariableNode) n.left).varName, member);
             return;
         }
         String rt = n.left.resolvedType;
@@ -412,7 +408,7 @@ public class CodeGenerator {
         Node callee = n.expression;
         List<Node> args = (n.arguments == null) ? new ArrayList<>() : n.arguments;
         if (callee instanceof VariableNode) {
-            String name = nameOf((VariableNode) callee);
+            String name = ((VariableNode) callee).varName;
             if (name.equals("Print")) {
                 genPrint(args.getFirst());
             }
@@ -455,7 +451,7 @@ public class CodeGenerator {
     }
 
     public void genMethodCall(MemberAccessNode ma, List<Node> args) {
-        String method = nameOf((VariableNode) ma.right);
+        String method = ((VariableNode) ma.right).varName;
         Node recv = ma.left;
         String rt = recv.resolvedType;
         List<String> argTypes = typesOf(args);

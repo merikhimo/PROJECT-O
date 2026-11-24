@@ -31,7 +31,9 @@ public class ControlFlowGen {
         }
         g.out.label(elseLabel);
         g.genBlock(n.elseBranch);
-        if (endLabel != null) g.out.label(endLabel);
+        if (endLabel != null) {
+            g.out.label(endLabel);
+        }
     }
 
     public void genWhile(WhileNode n) {
@@ -47,6 +49,6 @@ public class ControlFlowGen {
     }
 
     private boolean endsWithReturn(List<Node> stmts) {
-        return stmts != null && !stmts.isEmpty() && stmts.get(stmts.size() - 1) instanceof ReturnNode;
+        return stmts != null && !stmts.isEmpty() && stmts.getLast() instanceof ReturnNode;
     }
 }

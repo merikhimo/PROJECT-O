@@ -10,7 +10,6 @@ public class Emitter {
 
     public void directive(String line) {
         sb.append(line).append('\n');
-
     }
 
     public void raw(String text) {

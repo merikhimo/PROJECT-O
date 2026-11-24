@@ -4,21 +4,23 @@ import java.util.List;
 
 public class Descriptors {
     public static String type(String t) {
-        switch (t) {
-            case "Integer":   return "I";
-            case "Real":      return "D";
-            case "Boolean":   return "Z";
-            case "IntArray":  return "[I";
-            case "RealArray": return "[D";
-            case "BoolArray": return "[Z";
-            case "void":      return "V";
-            default:          return "L" + t + ";";
-        }
+        return switch (t) {
+            case "Integer" -> "I";
+            case "Real" -> "D";
+            case "Boolean" -> "Z";
+            case "IntArray" -> "[I";
+            case "RealArray" -> "[D";
+            case "BoolArray" -> "[Z";
+            case "void" -> "V";
+            default -> "L" + t + ";";
+        };
     }
 
     public static String method(List<String> params, String ret) {
         StringBuilder sb = new StringBuilder("(");
-        for (String p : params) sb.append(type(p));
+        for (String p : params) {
+            sb.append(type(p));
+        }
         return sb.append(")").append(type(ret)).toString();
     }
 
@@ -28,8 +30,12 @@ public class Descriptors {
     }
 
     public static String prefix(String t) {
-        if (t.equals("Real")) return "d";
-        if (t.equals("Integer") || t.equals("Boolean")) return "i";
+        if (t.equals("Real")) {
+            return "d";
+        }
+        if (t.equals("Integer") || t.equals("Boolean")) {
+            return "i";
+        }
         return "a";
     }
 }

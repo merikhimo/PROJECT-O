@@ -40,22 +40,22 @@ public class BuiltinGen {
         boolean real = recv.equals("Real") || argTypes.contains("Real");
 
         switch (method) {
-            case "Plus":         emit(real ? "dadd" : "iadd"); return;
-            case "Minus":        emit(real ? "dsub" : "isub"); return;
-            case "Mult":         emit(real ? "dmul" : "imul"); return;
-            case "Div":          emit(real ? "ddiv" : "idiv"); return;
-            case "Rem":          emit(real ? "drem" : "irem"); return;
-            case "UnaryMinus":   emit(real ? "dneg" : "ineg"); return;
+            case "Plus": emit(real ? "dadd" : "iadd"); return;
+            case "Minus": emit(real ? "dsub" : "isub"); return;
+            case "Mult": emit(real ? "dmul" : "imul"); return;
+            case "Div": emit(real ? "ddiv" : "idiv"); return;
+            case "Rem": emit(real ? "drem" : "irem"); return;
+            case "UnaryMinus": emit(real ? "dneg" : "ineg"); return;
 
-            case "Less":         compare(real, "lt"); return;
-            case "LessEqual":    compare(real, "le"); return;
-            case "Greater":      compare(real, "gt"); return;
+            case "Less": compare(real, "lt"); return;
+            case "LessEqual": compare(real, "le"); return;
+            case "Greater": compare(real, "gt"); return;
             case "GreaterEqual": compare(real, "ge"); return;
-            case "Equal":        compare(real, "eq"); return;
+            case "Equal": compare(real, "eq"); return;
 
-            case "toReal":       emit("i2d"); return;
-            case "toInteger":    emit("d2i"); return;
-            case "toBoolean":    pushBool("ifne"); return;   // x != 0
+            case "toReal": emit("i2d"); return;
+            case "toInteger": emit("d2i"); return;
+            case "toBoolean": pushBool("ifne"); return;
             default:
                 throw unsupported(recv + "." + method);
         }
@@ -63,11 +63,11 @@ public class BuiltinGen {
 
     private void genBoolean(String method) {
         switch (method) {
-            case "And":       emit("iand"); return;
-            case "Or":        emit("ior"); return;
-            case "Xor":       emit("ixor"); return;
-            case "Not":       emit("iconst_1"); emit("ixor"); return;
-            case "toInteger": return;   // Boolean уже лежит на стеке как 0/1
+            case "And": emit("iand"); return;
+            case "Or": emit("ior"); return;
+            case "Xor": emit("ixor"); return;
+            case "Not": emit("iconst_1"); emit("ixor"); return;
+            case "toInteger": return;
             default:
                 throw unsupported("Boolean." + method);
         }
@@ -77,8 +77,8 @@ public class BuiltinGen {
         String p = recv.equals("IntArray") ? "i" : recv.equals("RealArray") ? "d" : "b";
         switch (method) {
             case "Length": emit("arraylength"); return;
-            case "get":    emit(p + "aload"); return;
-            case "set":    emit(p + "astore"); return;
+            case "get": emit(p + "aload"); return;
+            case "set": emit(p + "astore"); return;
             default:
                 throw unsupported(recv + "." + method);
         }
@@ -107,10 +107,10 @@ public class BuiltinGen {
     public void genConstruct(String cls, List<String> argTypes) {
         switch (cls) {
             case "Integer":
-                if (argTypes.get(0).equals("Real")) emit("d2i");
+                if (argTypes.getFirst().equals("Real")) emit("d2i");
                 return;
             case "Real":
-                if (argTypes.get(0).equals("Integer")) emit("i2d");
+                if (argTypes.getFirst().equals("Integer")) emit("i2d");
                 return;
             case "Boolean":
                 return;
@@ -130,12 +130,29 @@ public class BuiltinGen {
 
     public void genStaticField(String cls, String member) {
         if (cls.equals("Integer")) {
-            if (member.equals("Min")) { emit("ldc " + Integer.MIN_VALUE); return; }
-            if (member.equals("Max")) { emit("ldc " + Integer.MAX_VALUE); return; }
+            if (member.equals("Min")) {
+                emit("ldc " + Integer.MIN_VALUE);
+                return;
+            }
+            if (member.equals("Max")) {
+                emit("ldc " + Integer.MAX_VALUE);
+                return;
+            }
         } else if (cls.equals("Real")) {
-            if (member.equals("Min"))     { emit("ldc2_w " + (-Double.MAX_VALUE)); return; }
-            if (member.equals("Max"))     { emit("ldc2_w " + Double.MAX_VALUE); return; }
-            if (member.equals("Epsilon")) { emit("ldc2_w " + Math.ulp(1.0)); return; }
+            switch (member) {
+                case "Min" -> {
+                    emit("ldc2_w " + (-Double.MAX_VALUE));
+                    return;
+                }
+                case "Max" -> {
+                    emit("ldc2_w " + Double.MAX_VALUE);
+                    return;
+                }
+                case "Epsilon" -> {
+                    emit("ldc2_w " + Math.ulp(1.0));
+                    return;
+                }
+            }
         }
         throw unsupported("field " + cls + "." + member);
     }
