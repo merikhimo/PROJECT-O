@@ -16,10 +16,10 @@ public class CodeGenerator {
     public Emitter out = new Emitter();
     public Locals locals = new Locals();
     public ClassSymbol currentClass;
-    private String currentReturn = "void";
+    public String currentReturn = "void";
 
-    private final BuiltinGen builtin;
-    private final ControlFlowGen flow;
+    public final BuiltinGen builtin;
+    public final ControlFlowGen flow;
 
     public CodeGenerator(SymbolTable table) {
         this.table = table;
@@ -31,7 +31,6 @@ public class CodeGenerator {
         return v.varName;
     }
 
-    // ================= точка входа =================
 
     public Map<String, String> generate(Node program) {
         Map<String, String> files = new LinkedHashMap<>();
@@ -51,13 +50,12 @@ public class CodeGenerator {
         }
     }
 
-    // ================= классы, конструкторы, методы =================
 
-    private String superOf(ClassDeclNode c) {
+    public String superOf(ClassDeclNode c) {
         return (c.superClassName != null) ? c.superClassName : "java/lang/Object";
     }
 
-    private String genClass(ClassDeclNode c) {
+    public String genClass(ClassDeclNode c) {
         currentClass = table.getClass(c.className);
         out = new Emitter();
         if (CLASS_VERSION != null) out.directive(".bytecode " + CLASS_VERSION);
@@ -87,13 +85,13 @@ public class CodeGenerator {
         return out.text();
     }
 
-    private void beginMethod(String ret) {
+    public void beginMethod(String ret) {
         out = new Emitter();
         locals = new Locals();
         currentReturn = ret;
     }
 
-    private void endMethod(Emitter classOut, String header, int localsCount) {
+    public void endMethod(Emitter classOut, String header, int localsCount) {
         String body = out.text();
         out = classOut;
         out.directive(".method " + header);
@@ -104,7 +102,7 @@ public class CodeGenerator {
         out.blank();
     }
 
-    private void genConstructor(ClassDeclNode c, ConstructNode k) {
+    public void genConstructor(ClassDeclNode c, ConstructNode k) {
         List<Node> params = (k == null) ? null : k.parameters;
         List<Node> stmts = (k == null) ? null : k.statements;
         Emitter classOut = out;
@@ -120,7 +118,7 @@ public class CodeGenerator {
         endMethod(classOut, "public <init>" + Descriptors.method(paramTypes(params), "void"), locals.max());
     }
 
-    private void genFieldInits(ClassDeclNode c) {
+    public void genFieldInits(ClassDeclNode c) {
         if (c.members == null) return;
         for (Node m : c.members) {
             if (m instanceof VariableDeclNode) {
@@ -133,7 +131,7 @@ public class CodeGenerator {
         }
     }
 
-    private void genMethod(MethodDeclNode m) {
+    public void genMethod(MethodDeclNode m) {
         if (m.body == null) return;
         MethodHeaderNode h = m.header;
         String ret = (h.returnType == null) ? "void" : h.returnType;
@@ -142,7 +140,7 @@ public class CodeGenerator {
         declareParams(h.parameters);
 
         if (m.body instanceof ExpressionBodyNode) {
-            Node e = m.body.children.get(0);
+            Node e = m.body.children.getFirst();
             genExpr(e);
             if (ret.equals("void")) {
                 popIfValue(e);
@@ -159,7 +157,7 @@ public class CodeGenerator {
                 locals.max());
     }
 
-    private void declareParams(List<Node> params) {
+    public void declareParams(List<Node> params) {
         if (params == null) return;
         for (Node p : params) {
             ParameterNode pn = (ParameterNode) p;
@@ -167,20 +165,25 @@ public class CodeGenerator {
         }
     }
 
-    private List<String> paramTypes(List<Node> params) {
+    public List<String> paramTypes(List<Node> params) {
         List<String> types = new ArrayList<>();
         if (params != null) {
-            for (Node p : params) types.add(((ParameterNode) p).paramType);
+            for (Node p : params) {
+                types.add(((ParameterNode) p).paramType);
+            }
         }
         return types;
     }
 
-    private boolean endsWithReturn(List<Node> stmts) {
-        return stmts != null && !stmts.isEmpty() && stmts.get(stmts.size() - 1) instanceof ReturnNode;
+    public boolean endsWithReturn(List<Node> stmts) {
+        return stmts != null && !stmts.isEmpty() && stmts.getLast() instanceof ReturnNode;
     }
 
-    private void emitDefaultReturn(String ret) {
-        if (ret.equals("void")) { out.emit("return"); return; }
+    public void emitDefaultReturn(String ret) {
+        if (ret.equals("void")) {
+            out.emit("return");
+            return;
+        }
         switch (Descriptors.prefix(ret)) {
             case "i": out.emit("iconst_0"); break;
             case "d": out.emit("dconst_0"); break;
@@ -189,36 +192,58 @@ public class CodeGenerator {
         out.emit(returnOp(ret));
     }
 
-    private String returnOp(String t) {
+    public String returnOp(String t) {
         return Descriptors.prefix(t) + "return";
     }
 
-    // ================= main: точка входа программы =================
 
-    /** В каждом классе: создаёт объект первым конструктором, аргументы берёт из командной строки. */
-    private void genMain() {
+    public void genMain() {
         Emitter classOut = out;
         out = new Emitter();
-        MethodSymbol ctor = currentClass.constructors.get(0);
+        MethodSymbol ctor = currentClass.constructors.getFirst();
         List<String> pts = ctor.paramTypes;
-        int nextSlot = 1;
+        int counter = 1;
+        int nextSlot = 2;
+        int[] arraySlot = new int[pts.size()];
+
+        for (int i = 0; i < pts.size(); i++) {
+            switch (pts.get(i)) {
+                case "IntArray":
+                    arraySlot[i] = nextSlot++;
+                    buildArray(counter, arraySlot[i], "int",
+                            "java/lang/Integer/parseInt(Ljava/lang/String;)I", "iastore");
+                    break;
+                case "RealArray":
+                    arraySlot[i] = nextSlot++;
+                    buildArray(counter, arraySlot[i], "double",
+                            "java/lang/Double/parseDouble(Ljava/lang/String;)D", "dastore");
+                    break;
+                case "BoolArray":
+                    arraySlot[i] = nextSlot++;
+                    buildArray(counter, arraySlot[i], "boolean",
+                            "java/lang/Boolean/parseBoolean(Ljava/lang/String;)Z", "bastore");
+                    break;
+            }
+        }
 
         out.emit("new " + currentClass.name);
         out.emit("dup");
         for (int i = 0; i < pts.size(); i++) {
             switch (pts.get(i)) {
                 case "Integer":
-                    argScalar(i, "java/lang/Integer/parseInt(Ljava/lang/String;)I"); break;
+                    argScalar(i, "java/lang/Integer/parseInt(Ljava/lang/String;)I");
+                    break;
                 case "Real":
-                    argScalar(i, "java/lang/Double/parseDouble(Ljava/lang/String;)D"); break;
+                    argScalar(i, "java/lang/Double/parseDouble(Ljava/lang/String;)D");
+                    break;
                 case "Boolean":
-                    argScalar(i, "java/lang/Boolean/parseBoolean(Ljava/lang/String;)Z"); break;
+                    argScalar(i, "java/lang/Boolean/parseBoolean(Ljava/lang/String;)Z");
+                    break;
                 case "IntArray":
-                    argArray(nextSlot++, "int", "java/lang/Integer/parseInt(Ljava/lang/String;)I", "iastore"); break;
                 case "RealArray":
-                    argArray(nextSlot++, "double", "java/lang/Double/parseDouble(Ljava/lang/String;)D", "dastore"); break;
                 case "BoolArray":
-                    argArray(nextSlot++, "boolean", "java/lang/Boolean/parseBoolean(Ljava/lang/String;)Z", "bastore"); break;
+                    out.emit("aload " + arraySlot[i]);
+                    break;
                 default:
                     out.emit("aconst_null");
             }
@@ -229,40 +254,40 @@ public class CodeGenerator {
         endMethod(classOut, "public static main([Ljava/lang/String;)V", nextSlot);
     }
 
-    private void argScalar(int index, String parse) {
+    public void argScalar(int index, String parse) {
         out.emit("aload_0");
         out.emit("ldc " + index);
         out.emit("aaload");
         out.emit("invokestatic " + parse);
     }
 
-    private void argArray(int idxSlot, String elemType, String parse, String storeOp) {
+    public void buildArray(int counter, int target, String elemType, String parse, String storeOp) {
         String loop = out.newLabel(), done = out.newLabel();
         out.emit("aload_0");
         out.emit("arraylength");
         out.emit("newarray " + elemType);
+        out.emit("astore " + target);
         out.emit("iconst_0");
-        out.emit("istore " + idxSlot);
+        out.emit("istore " + counter);
         out.label(loop);
-        out.emit("iload " + idxSlot);
+        out.emit("iload " + counter);
         out.emit("aload_0");
         out.emit("arraylength");
         out.emit("if_icmpge " + done);
-        out.emit("dup");
-        out.emit("iload " + idxSlot);
+        out.emit("aload " + target);
+        out.emit("iload " + counter);
         out.emit("aload_0");
-        out.emit("iload " + idxSlot);
+        out.emit("iload " + counter);
         out.emit("aaload");
         out.emit("invokestatic " + parse);
         out.emit(storeOp);
-        out.emit("iinc " + idxSlot + " 1");
+        out.emit("iinc " + counter + " 1");
         out.emit("goto " + loop);
         out.label(done);
     }
 
-    // ================= операторы =================
 
-    private void genStatements(List<Node> stmts) {
+    public void genStatements(List<Node> stmts) {
         if (stmts == null) return;
         for (Node s : stmts) genStmt(s);
     }
@@ -275,30 +300,32 @@ public class CodeGenerator {
     }
 
     public void genStmt(Node n) {
-        if (n instanceof VariableDeclNode)      genLocalDecl((VariableDeclNode) n);
-        else if (n instanceof AssignmentNode)   genAssign((AssignmentNode) n);
-        else if (n instanceof ReturnNode)       genReturn((ReturnNode) n);
-        else if (n instanceof IfNode)           flow.genIf((IfNode) n);
-        else if (n instanceof WhileNode)        flow.genWhile((WhileNode) n);
-        else {
-            genExpr(n);
-            popIfValue(n);
+        switch (n) {
+            case VariableDeclNode variableDeclNode -> genLocalDecl(variableDeclNode);
+            case AssignmentNode assignmentNode -> genAssign(assignmentNode);
+            case ReturnNode returnNode -> genReturn(returnNode);
+            case IfNode ifNode -> flow.genIf(ifNode);
+            case WhileNode whileNode -> flow.genWhile(whileNode);
+            case null, default -> {
+                genExpr(n);
+                popIfValue(n);
+            }
         }
     }
 
-    private void popIfValue(Node e) {
+    public void popIfValue(Node e) {
         String t = e.resolvedType;
         if (t != null && !t.equals("void")) out.emit(Descriptors.size(t) == 2 ? "pop2" : "pop");
     }
 
-    private void genLocalDecl(VariableDeclNode n) {
+    public void genLocalDecl(VariableDeclNode n) {
         genExpr(n.initializer);
         String t = (n.resolvedType != null) ? n.resolvedType : n.initializer.resolvedType;
         int slot = locals.declare(n.varName, t);
         out.emit(Descriptors.prefix(t) + "store " + slot);
     }
 
-    private void genAssign(AssignmentNode n) {
+    public void genAssign(AssignmentNode n) {
         Locals.Var v = locals.lookup(n.target);
         if (v != null) {
             genExpr(n.expression);
@@ -311,30 +338,30 @@ public class CodeGenerator {
         }
     }
 
-    private void genReturn(ReturnNode n) {
+    public void genReturn(ReturnNode n) {
         if (n.children.isEmpty()) {
             out.emit("return");
         } else {
-            genExpr(n.children.get(0));
+            genExpr(n.children.getFirst());
             out.emit(returnOp(currentReturn));
         }
     }
 
-    // ================= выражения =================
 
-    /** Оставляет значение выражения на стеке (для void-вызова ничего). */
     public void genExpr(Node n) {
-        if (n instanceof NumberNode)             out.emit("ldc " + ((NumberNode) n).value);
-        else if (n instanceof RealNumberNode)    out.emit("ldc2_w " + ((RealNumberNode) n).value);
-        else if (n instanceof BooleanNumberNode) out.emit(((BooleanNumberNode) n).value ? "iconst_1" : "iconst_0");
-        else if (n instanceof ThisNode)          out.emit("aload_0");
-        else if (n instanceof VariableNode)      genVariable((VariableNode) n);
-        else if (n instanceof MemberAccessNode)  genMemberAccess((MemberAccessNode) n);
-        else if (n instanceof FunctionCallNode)  genCall((FunctionCallNode) n);
-        else throw new IllegalStateException("codegen: unsupported expression " + n.type);
+        switch (n) {
+            case NumberNode numberNode -> out.emit("ldc " + numberNode.value);
+            case RealNumberNode realNumberNode -> out.emit("ldc2_w " + realNumberNode.value);
+            case BooleanNumberNode booleanNumberNode -> out.emit(booleanNumberNode.value ? "iconst_1" : "iconst_0");
+            case ThisNode thisNode -> out.emit("aload_0");
+            case VariableNode variableNode -> genVariable(variableNode);
+            case MemberAccessNode memberAccessNode -> genMemberAccess(memberAccessNode);
+            case FunctionCallNode functionCallNode -> genCall(functionCallNode);
+            case null, default -> throw new IllegalStateException("codegen: unsupported expression " + n.type);
+        }
     }
 
-    private void genVariable(VariableNode n) {
+    public void genVariable(VariableNode n) {
         String name = nameOf(n);
         Locals.Var v = locals.lookup(name);
         if (v != null) {
@@ -342,7 +369,9 @@ public class CodeGenerator {
             return;
         }
         VarSymbol f = table.findField(currentClass.name, name);
-        if (f == null) throw new IllegalStateException("codegen: unknown variable " + name);
+        if (f == null) {
+            throw new IllegalStateException("codegen: unknown variable " + name);
+        }
         out.emit("aload_0");
         out.emit("getfield " + currentClass.name + "/" + name + " " + Descriptors.type(f.typeName));
     }
@@ -355,7 +384,7 @@ public class CodeGenerator {
                 && table.classes.containsKey(name);
     }
 
-    private void genMemberAccess(MemberAccessNode n) {
+    public void genMemberAccess(MemberAccessNode n) {
         String member = nameOf((VariableNode) n.right);
         if (isClassRef(n.left)) {
             builtin.genStaticField(nameOf((VariableNode) n.left), member);
@@ -368,7 +397,7 @@ public class CodeGenerator {
         List<String> noArgs = new ArrayList<>();
         if (f != null && !rc.builtin) {
             out.emit("getfield " + rt + "/" + member + " " + Descriptors.type(f.typeName));
-        } else if (f != null) {                          // x.Min у встроенного: объект не нужен
+        } else if (f != null) {
             out.emit(Descriptors.size(rt) == 2 ? "pop2" : "pop");
             builtin.genStaticField(rt, member);
         } else if (rc.builtin) {
@@ -379,12 +408,14 @@ public class CodeGenerator {
         }
     }
 
-    private void genCall(FunctionCallNode n) {
+    public void genCall(FunctionCallNode n) {
         Node callee = n.expression;
-        List<Node> args = (n.arguments == null) ? new ArrayList<Node>() : n.arguments;
+        List<Node> args = (n.arguments == null) ? new ArrayList<>() : n.arguments;
         if (callee instanceof VariableNode) {
             String name = nameOf((VariableNode) callee);
-            if (name.equals("Print")) genPrint(args.get(0));
+            if (name.equals("Print")) {
+                genPrint(args.getFirst());
+            }
             else genConstructorCall(name, args);
         } else if (callee instanceof MemberAccessNode) {
             genMethodCall((MemberAccessNode) callee, args);
@@ -393,7 +424,7 @@ public class CodeGenerator {
         }
     }
 
-    private void genPrint(Node arg) {
+    public void genPrint(Node arg) {
         out.emit("getstatic java/lang/System/out Ljava/io/PrintStream;");
         genExpr(arg);
         String t = arg.resolvedType;
@@ -402,22 +433,28 @@ public class CodeGenerator {
         out.emit("invokevirtual java/io/PrintStream/println(" + d + ")V");
     }
 
-    private void genConstructorCall(String cls, List<Node> args) {
+    public void genConstructorCall(String cls, List<Node> args) {
         List<String> argTypes = typesOf(args);
         if (table.getClass(cls).builtin) {
-            for (Node a : args) genExpr(a);
+            for (Node a : args) {
+                genExpr(a);
+            }
             builtin.genConstruct(cls, argTypes);
             return;
         }
         out.emit("new " + cls);
         out.emit("dup");
-        for (Node a : args) genExpr(a);
+        for (Node a : args) {
+            genExpr(a);
+        }
         MethodSymbol ctor = table.findConstructor(cls, argTypes);
-        if (ctor == null) throw new IllegalStateException("codegen: no constructor " + cls + argTypes);
+        if (ctor == null) {
+            throw new IllegalStateException("codegen: no constructor " + cls + argTypes);
+        }
         out.emit("invokespecial " + cls + "/<init>" + Descriptors.method(ctor.paramTypes, "void"));
     }
 
-    private void genMethodCall(MemberAccessNode ma, List<Node> args) {
+    public void genMethodCall(MemberAccessNode ma, List<Node> args) {
         String method = nameOf((VariableNode) ma.right);
         Node recv = ma.left;
         String rt = recv.resolvedType;
@@ -427,10 +464,14 @@ public class CodeGenerator {
             boolean numeric = rt.equals("Integer") || rt.equals("Real");
             boolean promote = numeric && (rt.equals("Real") || argTypes.contains("Real"));
             genExpr(recv);
-            if (promote && rt.equals("Integer")) out.emit("i2d");
+            if (promote && rt.equals("Integer")){
+                out.emit("i2d");
+            }
             for (int i = 0; i < args.size(); i++) {
                 genExpr(args.get(i));
-                if (promote && argTypes.get(i).equals("Integer")) out.emit("i2d");
+                if (promote && argTypes.get(i).equals("Integer")) {
+                    out.emit("i2d");
+                }
             }
             builtin.genMethod(rt, method, argTypes);
         } else {
@@ -442,7 +483,7 @@ public class CodeGenerator {
         }
     }
 
-    private List<String> typesOf(List<Node> nodes) {
+    public List<String> typesOf(List<Node> nodes) {
         List<String> t = new ArrayList<>();
         for (Node a : nodes) t.add(a.resolvedType);
         return t;
