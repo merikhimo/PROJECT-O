@@ -1,0 +1,51 @@
+class Account is
+    var balance : 0
+
+    this(initial: Integer) is
+        balance := initial
+    end
+
+    method deposit(amount: Integer) is
+        if amount.Greater(0) then
+            balance := balance.Plus(amount)
+        end
+    end
+
+    method getBalance : Integer => balance
+end
+
+class SavingsAccount extends Account is
+    var interestRate : 5
+
+    this(initial: Integer, rate: Integer) is
+        balance := initial
+        interestRate := rate
+    end
+
+    method deposit(amount: Integer, bonus: Integer) is
+        balance := balance.Plus(amount).Plus(bonus)
+    end
+
+    method applyInterest(years: Integer) is
+        var i : 0
+        while i.Less(years) loop
+            var profit : balance.Mult(interestRate).Div(100)
+            balance := balance.Plus(profit)
+            i := i.Plus(1)
+        end
+    end
+end
+
+class BankTest is
+    this() is
+        var myAcc : SavingsAccount(1000, 10)
+        
+        myAcc.deposit(200)
+        
+        myAcc.deposit(100, 50)
+        
+        myAcc.applyInterest(1)
+        
+        var finalSum : myAcc.getBalance()
+    end
+end

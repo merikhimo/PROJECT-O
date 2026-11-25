@@ -1,0 +1,37 @@
+class Shape is
+    method area : Integer => 0
+end
+
+class Rectangle extends Shape is
+    var width : 0
+    var height : 0
+
+    this(w: Integer, h: Integer) is
+        width := w
+        height := h
+    end
+
+    method area : Integer => width.Mult(height)
+end
+
+class Square extends Rectangle is
+    this(side: Integer) is
+        width := side
+        height := side
+    end
+end
+
+class Main is
+    this() is
+        var s : Shape()
+        var r : Rectangle(4, 5)
+        var sq : Square(3)
+        var totalArea : 0
+
+        s := r
+        totalArea := totalArea.Plus(s.area())
+
+        s := sq
+        totalArea := totalArea.Plus(s.area())
+    end
+end
