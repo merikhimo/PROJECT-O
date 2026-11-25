@@ -1,0 +1,22 @@
+class DataBox is
+    var value : 10
+
+    method update(newValue: Integer) is
+        value := newValue
+    end
+
+    this() is end
+end
+
+class Main is
+    method update(x: DataBox) is
+            x.update(30)
+        end
+
+    this() is
+        var box : DataBox()
+        var current : box.value
+        this.update(box)
+        Print(box.value)
+    end
+end
